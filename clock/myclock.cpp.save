@@ -1,0 +1,77 @@
+#include "myclock.h"
+
+myclock::myclock() : matrix(A, B, C, CLK, LAT, OE, true)
+{
+    // Last parameter = 'true' enables double-buffering, for flicker-free,
+    // buttery smooth animation.  Note that NOTHING WILL SHOW ON THE DISPLAY
+    // until the first call to swapBuffers().  This is normal.
+    // Double-buffered mode consumes nearly all the RAM available on the
+    // Arduino Uno -- only a handful of free bytes remain.
+};
+
+void myclock::init()
+{
+    matrix.begin();
+    matrix.cleanScreen();
+}
+
+void myclock::update()
+{
+    putLargeTime(0,0,"10','00',0,1,0);
+    matrix.swapBuffers(false);
+}
+
+void myclock::putDigitLarge(uint8_t x, uint8_t y, char c, uint8_t r, uint8_t g,uint8_t b)
+{
+	// fonts defined for ascii 32 and beyond (index 0 in font array is ascii 32);
+	byte charIndex;
+
+	charIndex	=	c - '0'+22;
+
+	// move character definition, pixel by pixel, onto the display;
+	// fonts are defined as one byte per row;
+	for (byte row=0; row<12; row++)
+	{
+		byte rowDots	=	pgm_read_byte_near(&bigFont[charIndex][row]);
+		for (byte col=0; col<6; col++)
+		{
+			if (rowDots & (1<<(5-col)))
+				matrix.drawPixel(x+col, y+row, r,g,b);
+			else
+				matrix.drawPixel(x+col, y+row, 0,0,0);
+		}
+	}
+}
+
+void myclock::putLargeTime(uint8_t x, uint8_t y, char* h,char* m, uint8_t r, uint8_t g,uint8_t b)
+{
+	char space = 3;
+	char numcols=6;
+	if (strlen(h)<2){
+		putDigitLarge(x, y, '0', r,g,b);
+		putDigitLarge(x+numcols, y, h[0], r,g,b);
+	}
+	else {
+		putDigitLarge(x, y, h[0], r,g,b);
+		putDigitLarge(x+numcols, y, h[1], r,g,b);
+	}
+
+	if (strlen(m)<2){
+		putDigitLarge(x+numcols*2+space, y, '0', r,g,b);
+		putDigitLarge(x+numcols*3+space, y, m[0], r,g,b);
+	}
+	else {
+		putDigitLarge(x+numcols*2+space, y, m[0], r,g,b);
+		putDigitLarge(x+numcols*3+space, y, m[1], r,g,b);
+	}
+
+	matrix.drawPixel(x+numcols*2+space/2, y+3, r,g,b);
+	matrix.drawPixel(x+numcols*2+space/2+1, y+3, r,g,b);
+	matrix.drawPixel(x+numcols*2+space/2, y+4, r,g,b);
+	matrix.drawPixel(x+numcols*2+space/2+1, y+4, r,g,b);
+
+	matrix.drawPixel(x+numcols*2+space/2, y+8, r,g,b);
+	matrix.drawPixel(x+numcols*2+space/2+1, y+8, r,g,b);
+	matrix.drawPixel(x+numcols*2+space/2, y+9, r,g,b);
+	matrix.drawPixel(x+numcols*2+space/2+1, y+9, r,g,b);
+}
